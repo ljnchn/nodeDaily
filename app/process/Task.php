@@ -1,5 +1,5 @@
 <?php
-namespace process;
+namespace app\process;
 
 use Workerman\Crontab\Crontab;
 
