@@ -58,5 +58,8 @@ return [
                 'enable_memory_monitor' => DIRECTORY_SEPARATOR === '/',
             ]
         ]
-    ]
+    ],
+    'task'  => [
+        'handler'  => process\Task::class
+    ],
 ];
