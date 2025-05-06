@@ -41,7 +41,7 @@ class NodeDailyJieba extends Command
         Jieba::loadUserDict(base_path() . '/app/command/user_dict.txt');
 
         // Get posts that haven't been tokenized yet
-        $posts = Post::where('is_token', 0)->where('id', 332015)->limit(10)->get();
+        $posts = Post::where('is_token', 0)->limit(10)->get();
         
         foreach ($posts as $post) {
             // Perform word segmentation on the title
