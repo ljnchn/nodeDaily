@@ -5,7 +5,16 @@ namespace app\model;
 use support\Model;
 
 /**
- *
+ * post 
+ * @property integer $id (主键)
+ * @property string $title 
+ * @property string $desc 
+ * @property string $category 
+ * @property string $creator 
+ * @property string $pub_date 
+ * @property string $cretated_at 
+ * @property string $updated_at 
+ * @property string $from_type
  */
 class Post extends Model
 {
@@ -21,7 +30,7 @@ class Post extends Model
      *
      * @var string
      */
-    protected $table = null;
+    protected $table = 'post';
 
     /**
      * The primary key associated with the table.
