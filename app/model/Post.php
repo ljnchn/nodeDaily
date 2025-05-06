@@ -12,9 +12,10 @@ use support\Model;
  * @property string $category 
  * @property string $creator 
  * @property string $pub_date 
- * @property string $cretated_at 
+ * @property string $created_at 
  * @property string $updated_at 
  * @property string $from_type
+ * @property string $is_token
  */
 class Post extends Model
 {
