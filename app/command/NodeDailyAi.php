@@ -59,10 +59,10 @@ class NodeDailyAi extends Command
     function getSummary($content)
     {
         $client = new Client();
-        $apiKey = 'sk-ee275a447f394fe59cb12dda2e4034a8';
+        $apiKey = env('DEEPSEEK_API_KEY');
         
         try {
-            $response = $client->post('https://api.deepseek.com/chat/completions', [
+            $response = $client->post(env('DEEPSEEK_API_URL') . '/chat/completions', [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Authorization' => 'Bearer ' . $apiKey,
