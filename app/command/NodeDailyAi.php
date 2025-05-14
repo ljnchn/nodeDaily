@@ -33,7 +33,7 @@ class NodeDailyAi extends Command
     {
         $name = $input->getArgument('name');
         $output->writeln('Hello nodeDaily:ai');
-        $content = $this->getTitleAndAuthor(10);
+        $content = $this->getTitleAndAuthor(50);
         $output->writeln($content);
 
         $summary = $this->getSummary($content);
@@ -51,7 +51,7 @@ class NodeDailyAi extends Command
         foreach ($posts as $post) {
             $title = $post->title;
             $author = $post->creator;
-            $content .= $title . ' ' . $author . ' ';
+            $content .= $title . '-' . $author . "\n";
         }
         return $content;
     }
@@ -60,7 +60,7 @@ class NodeDailyAi extends Command
     {
         $client = new Client();
         $apiKey = env('DEEPSEEK_API_KEY');
-        
+
         try {
             $response = $client->post(env('DEEPSEEK_API_URL') . '/chat/completions', [
                 'headers' => [
@@ -68,17 +68,26 @@ class NodeDailyAi extends Command
                     'Authorization' => 'Bearer ' . $apiKey,
                 ],
                 'json' => [
-                    'model' => 'deepseek-chat',
+                    'model' => 'deepseek-ai/DeepSeek-V3',
                     'messages' => [
-                        ['role' => 'system', 'content' => '你是资深社区观察员，输出遵循 JSON 格式：\{summary: 摘要150字, keywords: 5个核心关键词数组}'],
-                        ['role' => 'user', 'content' => '请基于以下帖子列表生成摘要及关键词：\n' . $content]
+                        ['role' => 'system', 'content' => '角色: NodeSeek 资深社区观察员，兼技术段子手。
+任务: 基于提供的 NodeSeek 帖子信息（标题、作者），用专业且风趣的口吻总结社区近期动态。
+总结要点:
+开场: 一句幽默的开场白概括本期看点。
+热议话题: 生动描述社区热议的几个核心主题（技术、服务、事件等），点出讨论焦点和主要观点，可适当使用社区黑话/梗。
+亮点/槽点: 提及有趣的讨论、神回复或值得注意的“坑”。
+收尾: 一句风趣且有洞察的总结或给社区的“温馨提示”。
+风格要求: 语言生动，吐槽精准，避免死板。让总结读起来像一个懂行的老鸟在分享观察。报告标题请有创意, 字数限制在200个字以内。'],
+                        ['role' => 'user', 'content' => '帖子列表:\n' . $content]
                     ],
                     'stream' => false,
-                    'response_format' => ['type' => 'json_object']
+                    'max_tokens' => 131072,
+                    'temperature' => 1,
+                    // 'response_format' => ['type' => 'json_object']
                 ]
             ]);
-            
             $result = json_decode($response->getBody()->getContents(), true);
+
             return $result['choices'][0]['message']['content'];
         } catch (RequestException $e) {
             return null;
