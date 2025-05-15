@@ -2,6 +2,7 @@
 
 namespace app\model;
 
+use Illuminate\Database\Eloquent\Casts\Json;
 use support\Model;
 
 /**
@@ -15,8 +16,9 @@ use support\Model;
  * @property string $created_at 
  * @property string $updated_at 
  * @property string $from_type
- * @property string $is_token
- * @property string $tokens
+ * @property int $is_token
+ * @property int $is_search
+ * @property Json $tokens
  */
 class Post extends Model
 {
