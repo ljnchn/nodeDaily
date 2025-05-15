@@ -16,6 +16,7 @@ use support\Model;
  * @property string $updated_at 
  * @property string $from_type
  * @property string $is_token
+ * @property string $tokens
  */
 class Post extends Model
 {
