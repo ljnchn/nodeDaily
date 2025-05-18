@@ -37,7 +37,8 @@ class SearchController
         $searchParams = [
             'limit' => $perPage,
             'offset' => ($page - 1) * $perPage,
-            'sort' => ['pub_date:desc']
+            'sort' => ['pub_date:desc'],
+            'attributesToHighlight' => ['title', 'desc']
         ];
 
         // 添加分类过滤

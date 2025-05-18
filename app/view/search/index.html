@@ -293,7 +293,7 @@
                     }
 
                     // 添加高亮配置
-                    searchParams.highlightPreTag = '<mark class="bg-warning text-primary-content px-1 rounded">';
+                    searchParams.highlightPreTag = '<mark class="text-error font-bold">';
                     searchParams.highlightPostTag = '</mark>';
                     searchParams.attributesToHighlight = ['title', 'desc'];
 
@@ -340,7 +340,8 @@
             function generateResultHTML(hit) {
                 // 使用高亮结果或原始内容
                 const title = hit._formatted?.title || escapeHTML(hit.title || '');
-                const desc = hit._formatted?.desc || escapeHTML(hit.desc || '');
+                // 不转义desc字段，允许其作为HTML渲染
+                const desc = hit._formatted?.desc || (hit.desc || '');
                 
                 return `
                 <div class="result-card card bg-base-100 shadow-md hover:shadow-lg transition-all">
@@ -352,7 +353,7 @@
                             </svg>
                             ${formatDate(hit.pub_date)}
                         </div>
-                        <p class="mt-2 text-base leading-relaxed">${desc}</p>
+                        <div class="mt-2 text-base leading-relaxed">${desc}</div>
                         <div class="card-actions justify-between items-center mt-4">
                             <div class="flex flex-wrap gap-2">
                                 <span class="badge badge-primary badge-custom">
