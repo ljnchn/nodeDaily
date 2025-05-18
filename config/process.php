@@ -59,7 +59,7 @@ return [
             ]
         ]
     ],
-    'task'  => [
-        'handler'  => app\process\Task::class
-    ],
+    // 'task'  => [
+    //     'handler'  => app\process\Task::class
+    // ],
 ];

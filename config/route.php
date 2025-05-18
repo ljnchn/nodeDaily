@@ -14,6 +14,8 @@
 
 use Webman\Route;
 
+// 添加 Meilisearch 搜索路由
+Route::post('/indexes/posts/search', [app\controller\SearchController::class, 'search']);
 
 
 

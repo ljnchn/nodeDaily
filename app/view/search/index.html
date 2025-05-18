@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="fantasy">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meilisearch 搜索</title>
+    <!-- DaisyUI 和 Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Meilisearch 原生JS客户端 -->
+    <script src="https://cdn.jsdelivr.net/npm/meilisearch@latest/dist/umd/index.min.js"></script>
+    <!-- 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .search-box {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .search-box:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            border-color: #4299e1;
+        }
+        .result-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            border-left: 4px solid #4299e1;
+        }
+        .badge-custom {
+            font-size: 0.7rem;
+            padding: 0.3em 0.6em;
+            border-radius: 9999px;
+        }
+        .pagination-btn {
+            transition: all 0.2s ease;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-base-200 to-base-300">
+    <div class="container mx-auto px-4 py-12">
+        <div class="search-container">
+            <div class="card bg-base-100 shadow-2xl overflow-hidden">
+                <div class="card-body">
+                    <h1 class="text-3xl font-bold text-center mb-8 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Meilisearch 搜索
+                    </h1>
+
+                    <!-- 搜索框 -->
+                    <div class="form-control mb-6">
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="输入搜索关键词..." 
+                                class="search-box input input-bordered input-lg w-full pl-5 pr-16 rounded-full bg-base-200 focus:bg-white" />
+                            <button id="searchButton" class="btn btn-primary btn-circle absolute right-2 top-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 分类筛选 -->
+                    <div class="flex flex-wrap gap-2 mb-6 justify-center">
+                        <div class="dropdown dropdown-hover">
+                            <div tabindex="0" role="button" class="btn btn-outline btn-primary m-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                分类: <span id="selectedCategory" class="ml-1 font-medium">全部</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                            <ul id="categoryList" tabindex="0" class="dropdown-content menu menu-compact p-2 shadow-lg bg-base-100 rounded-box w-52 z-10">
+                                <li><a data-value="" class="active">全部</a></li>
+                                <!-- 分类列表将通过JS动态填充 -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div id="loadingIndicator" class="flex justify-center my-10 hidden">
+                        <div class="flex flex-col items-center">
+                            <span class="loading loading-spinner loading-lg text-primary"></span>
+                            <p class="mt-3 text-sm text-base-content/70">搜索中，请稍候...</p>
+                        </div>
+                    </div>
+
+                    <!-- 统计信息 -->
+                    <div id="statsContainer" class="stats shadow-md mb-6 w-full hidden bg-base-200">
+                        <div class="stat">
+                            <div class="stat-figure text-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div class="stat-title">结果数量</div>
+                            <div id="totalHits" class="stat-value text-primary">0</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="stat-title">搜索用时</div>
+                            <div id="processingTime" class="stat-value text-secondary">0ms</div>
+                        </div>
+                    </div>
+
+                    <!-- 无结果提示 -->
+                    <div id="noResultsMessage" class="alert alert-info shadow-lg my-6 hidden">
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>没有找到匹配的结果</span>
+                        </div>
+                    </div>
+
+                    <!-- 搜索结果列表 -->
+                    <div class="divider"></div>
+                    <div id="searchResults" class="space-y-5">
+                        <!-- 结果将通过JS动态填充 -->
+                    </div>
+
+                    <!-- 分页 -->
+                    <div id="paginationContainer" class="flex justify-center my-8 hidden">
+                        <div class="btn-group shadow-md">
+                            <button id="prevPageBtn" class="pagination-btn btn btn-outline" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                                上一页
+                            </button>
+                            <button id="pageInfo" class="btn btn-outline">第 1 页，共 0 页</button>
+                            <button id="nextPageBtn" class="pagination-btn btn btn-outline" disabled>
+                                下一页
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-6 text-sm text-base-content/60">
+                <p>© 2023 Meilisearch 搜索应用</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化变量
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const selectedCategoryEl = document.getElementById('selectedCategory');
+            const categoryList = document.getElementById('categoryList');
+            const searchResults = document.getElementById('searchResults');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const statsContainer = document.getElementById('statsContainer');
+            const totalHits = document.getElementById('totalHits');
+            const processingTime = document.getElementById('processingTime');
+            const paginationContainer = document.getElementById('paginationContainer');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+
+            // 搜索配置
+            let currentPage = 1;
+            let totalPages = 0;
+            let hitsPerPage = 10;
+            let selectedCategory = '';
+            let categories = JSON.parse('<?= json_encode($categories ?? []) ?>');
+
+            // 创建 Meilisearch 客户端
+            const client = new meilisearch.MeiliSearch({
+                host: window.location.origin,  // 假设 Meilisearch 服务在同一域名下
+                apiKey: ''  // 如需API密钥，在此处填写
+            });
+
+            // 获取索引
+            const index = client.index('posts');
+
+            // 初始化
+            init();
+
+            // 初始化函数
+            async function init() {
+                await loadCategories();
+                setupEventListeners();
+                search();
+            }
+
+            // 加载分类数据
+            async function loadCategories() {
+                // 填充分类下拉菜单
+                if (categories && categories.length > 0) {
+                    const categoryListItems = categories.map(category =>
+                        `<li><a data-value="${category}">${category}</a></li>`
+                    ).join('');
+
+                    categoryList.innerHTML = `<li><a data-value="" class="active">全部</a></li>${categoryListItems}`;
+
+                    // 为分类项添加点击事件
+                    document.querySelectorAll('#categoryList li a').forEach(item => {
+                        item.addEventListener('click', () => {
+                            selectedCategory = item.getAttribute('data-value');
+                            selectedCategoryEl.textContent = selectedCategory || '全部';
+                            currentPage = 1;
+                            search();
+                            
+                            // 更新活动状态
+                            document.querySelectorAll('#categoryList li a').forEach(a => a.classList.remove('active'));
+                            item.classList.add('active');
+                        });
+                    });
+                }
+            }
+
+            // 设置事件监听器
+            function setupEventListeners() {
+                // 搜索按钮点击
+                searchButton.addEventListener('click', () => {
+                    currentPage = 1;
+                    search();
+                });
+
+                // 回车键搜索
+                searchInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        currentPage = 1;
+                        search();
+                    }
+                });
+
+                // 分页按钮
+                prevPageBtn.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        search();
+                        // 滚动到顶部
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    }
+                });
+
+                nextPageBtn.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        search();
+                        // 滚动到顶部
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                    }
+                });
+            }
+
+            // 执行搜索
+            async function search() {
+                try {
+                    // 显示加载状态
+                    showLoading(true);
+
+                    // 构建搜索参数
+                    const query = searchInput.value.trim();
+                    const searchParams = {
+                        limit: hitsPerPage,
+                        offset: (currentPage - 1) * hitsPerPage
+                    };
+
+                    // 添加分类筛选
+                    if (selectedCategory) {
+                        searchParams.filter = `category = "${selectedCategory}"`;
+                    }
+
+                    // 添加高亮配置
+                    searchParams.highlightPreTag = '<mark class="bg-warning text-primary-content px-1 rounded">';
+                    searchParams.highlightPostTag = '</mark>';
+                    searchParams.attributesToHighlight = ['title', 'desc'];
+
+                    // 执行搜索
+                    const searchResults = await index.search(query, searchParams);
+
+                    // 更新UI
+                    updateResults(searchResults);
+                } catch (error) {
+                    console.error('搜索错误:', error);
+                    showError('搜索时发生错误，请稍后再试');
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            // 更新搜索结果界面
+            function updateResults(results) {
+                const { hits, estimatedTotalHits, processingTimeMs } = results;
+
+                // 更新统计信息
+                totalHits.textContent = estimatedTotalHits || 0;
+                processingTime.textContent = `${processingTimeMs}ms`;
+                statsContainer.classList.toggle('hidden', !hits.length);
+
+                // 更新分页信息
+                totalPages = Math.ceil((estimatedTotalHits || 0) / hitsPerPage);
+                updatePagination();
+
+                // 显示无结果消息
+                noResultsMessage.classList.toggle('hidden', hits.length > 0);
+
+                // 清空结果容器
+                searchResults.innerHTML = '';
+
+                // 生成结果HTML
+                if (hits.length > 0) {
+                    const resultsHTML = hits.map(hit => generateResultHTML(hit)).join('');
+                    searchResults.innerHTML = resultsHTML;
+                }
+            }
+
+            // 生成单个结果的HTML
+            function generateResultHTML(hit) {
+                // 使用高亮结果或原始内容
+                const title = hit._formatted?.title || escapeHTML(hit.title || '');
+                const desc = hit._formatted?.desc || escapeHTML(hit.desc || '');
+                
+                return `
+                <div class="result-card card bg-base-100 shadow-md hover:shadow-lg transition-all">
+                    <div class="card-body">
+                        <h2 class="card-title text-xl font-bold text-primary">${title}</h2>
+                        <div class="flex items-center text-sm text-base-content/60 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            ${formatDate(hit.pub_date)}
+                        </div>
+                        <p class="mt-2 text-base leading-relaxed">${desc}</p>
+                        <div class="card-actions justify-between items-center mt-4">
+                            <div class="flex flex-wrap gap-2">
+                                <span class="badge badge-primary badge-custom">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                    ${escapeHTML(hit.category || '')}
+                                </span>
+                                <span class="badge badge-outline badge-custom">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    ${escapeHTML(hit.creator || '')}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            }
+
+            // 更新分页UI
+            function updatePagination() {
+                pageInfo.textContent = `第 ${currentPage} 页，共 ${totalPages} 页`;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+                paginationContainer.classList.toggle('hidden', totalPages <= 1);
+            }
+
+            // 显示/隐藏加载状态
+            function showLoading(isLoading) {
+                loadingIndicator.classList.toggle('hidden', !isLoading);
+            }
+
+            // 显示错误消息
+            function showError(message) {
+                noResultsMessage.textContent = message;
+                noResultsMessage.classList.remove('hidden');
+            }
+
+            // 格式化日期
+            function formatDate(dateString) {
+                if (!dateString) return '';
+
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            // HTML转义，防止XSS
+            function escapeHTML(str) {
+                if (!str) return '';
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        });
+    </script>
+</body>
+
+</html>

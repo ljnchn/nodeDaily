@@ -15,7 +15,7 @@ class NodeDailyJieba extends Command
 {
     protected static $defaultName = 'nodeDaily:jieba';
     protected static $defaultDescription = 'nodeDaily jieba';
-    
+
     /**
      * 停用词列表
      * @var array
@@ -37,14 +37,21 @@ class NodeDailyJieba extends Command
      */
     protected function loadStopWords()
     {
-        $stopWordsFile = base_path() . '/app/command/stop_words.txt';
-        if (file_exists($stopWordsFile)) {
-            $content = file_get_contents($stopWordsFile);
-            $words = explode("\n", $content);
-            foreach ($words as $word) {
-                $word = trim($word);
-                if (!empty($word)) {
-                    $this->stopWords[$word] = true;
+        // 加载多个停用词文件
+        $stopWordsFiles = [
+            base_path() . '/app/command/words/baidu_stopwords.txt',
+            base_path() . '/app/command/words/cn_stopwords.txt'
+        ];
+
+        foreach ($stopWordsFiles as $stopWordsFile) {
+            if (file_exists($stopWordsFile)) {
+                $content = file_get_contents($stopWordsFile);
+                $words = explode("\n", $content);
+                foreach ($words as $word) {
+                    $word = trim($word);
+                    if (!empty($word)) {
+                        $this->stopWords[$word] = true;
+                    }
                 }
             }
         }
@@ -60,39 +67,39 @@ class NodeDailyJieba extends Command
         $name = $input->getArgument('name');
         $limit = (int)$input->getOption('limit');
         $processAll = $input->getOption('all');
-        
+
         $output->writeln('Starting Jieba word segmentation for post titles...');
-        
+
         ini_set('memory_limit', '1024M');
         // Initialize Jieba
         Jieba::init();
         Finalseg::init();
-        Jieba::loadUserDict(base_path() . '/app/command/user_dict.txt');
-        
+        Jieba::loadUserDict(base_path() . '/app/command/words/user_dict.txt');
+
         // 加载停用词
         $this->loadStopWords();
         $output->writeln('Loaded ' . count($this->stopWords) . ' stop words.');
 
         // 获取需要处理的未分词文章
         $query = Post::where('is_token', 0);
-        
+
         if (!$processAll) {
             $query = $query->limit($limit);
         }
-        
+
         $posts = $query->get();
         $totalPosts = count($posts);
-        
+
         $output->writeln("Found {$totalPosts} posts to process" . ($processAll ? ' (processing all)' : ''));
-        
+
         $count = 0;
         $startTime = microtime(true);
-        
+
         foreach ($posts as $post) {
             try {
                 // Perform word segmentation on the title
                 $words = Jieba::cut($post->title);
-                
+
                 // 过滤掉单字符、停用词和不常用词
                 $filteredWords = [];
                 foreach ($words as $word) {
@@ -101,24 +108,24 @@ class NodeDailyJieba extends Command
                     if (empty($word) || mb_strlen($word, 'UTF-8') < 2) {
                         continue;
                     }
-                    
+
                     // 跳过停用词
                     if (isset($this->stopWords[$word])) {
                         continue;
                     }
-                    
+
                     $filteredWords[] = $word;
                 }
-                
+
                 // Join the words with spaces and update
                 $tokens = json_encode($filteredWords);
                 Post::where('id', $post->id)->update([
                     'tokens' => $tokens,
                     'is_token' => 1
                 ]);
-                
+
                 $count++;
-                
+
                 // 每处理100条显示一次进度
                 if ($count % 100 === 0 || $count === $totalPosts) {
                     $output->writeln("Progress: {$count}/{$totalPosts} posts processed (" . round(($count / $totalPosts) * 100, 2) . "%)");
@@ -130,7 +137,7 @@ class NodeDailyJieba extends Command
 
         $endTime = microtime(true);
         $timeUsed = round($endTime - $startTime, 2);
-        
+
         $output->writeln("Word segmentation completed! Processed {$count} posts in {$timeUsed} seconds.");
         return self::SUCCESS;
     }
