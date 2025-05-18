@@ -32,10 +32,11 @@ Route::fallback(function(){
 });
 
 Route::group('/search', function () {
-    Route::post('/posts', [app\controller\SearchController::class, 'search']);
+    Route::post('/list', [app\controller\SearchController::class, 'search']);
     Route::get('/categoryList', [app\controller\SearchController::class, 'categoryList']);
 })->middleware([
     app\middleware\Cors::class,
 ]);
 
-// 添加 Meilisearch 搜索路由
+# 关闭自动路由
+Route::disableDefaultRoute();

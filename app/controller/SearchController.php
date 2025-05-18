@@ -31,18 +31,18 @@ class SearchController
     public function categoryList(Request $request)
     {
         // 获取所有分类
-        $categories = $this->getCategories();
+        $categories = [
+            ['key' => 'daily', 'value' => '每日'],
+            ['key' => 'trade', 'value' => '交易'],
+            ['key' => 'review', 'value' => '评测'],
+            ['key' => 'info', 'value' => '资讯'],
+            ['key' => 'carpool', 'value' => '拼车'],
+            ['key' => 'promotion', 'value' => '推广'],
+            ['key' => 'tech', 'value' => '技术'],
+        ];
 
         return json([
-            'data' => [
-                'daily' => '每日',
-                'trade' => '交易',
-                'review' => '评测',
-                'info' => '资讯',
-                'carpool' => '拼车',
-                'promotion' => '推广',
-                'tech' => '技术',
-            ],
+            'data' => $categories,
             'code' => 0,
             'msg' => 'success'
         ]);
