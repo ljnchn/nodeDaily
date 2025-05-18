@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of webman.
  *
@@ -14,10 +15,27 @@
 
 use Webman\Route;
 
+Route::fallback(function(){
+    // 处理跨域 options 请求
+    response()->withHeaders([
+        'Access-Control-Allow-Credentials' => 'true',
+        'Access-Control-Allow-Origin' => request()->header('Origin', '*'),
+        'Access-Control-Allow-Methods' => '*',
+        'Access-Control-Allow-Headers' => '*',
+    ]);
+
+    if (request()->method() == 'OPTIONS') {
+        return response();
+    }
+
+    return json([], 404);
+});
+
+Route::group('/search', function () {
+    Route::post('/posts', [app\controller\SearchController::class, 'search']);
+    Route::get('/categoryList', [app\controller\SearchController::class, 'categoryList']);
+})->middleware([
+    app\middleware\Cors::class,
+]);
+
 // 添加 Meilisearch 搜索路由
-Route::post('/indexes/posts/search', [app\controller\SearchController::class, 'search']);
-
-
-
-
-

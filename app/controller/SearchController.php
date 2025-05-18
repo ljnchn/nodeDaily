@@ -21,9 +21,30 @@ class SearchController
     {
         // 获取所有分类
         $categories = $this->getCategories();
-        
+
         return view('search/index', [
             'categories' => $categories
+        ]);
+    }
+
+
+    public function categoryList(Request $request)
+    {
+        // 获取所有分类
+        $categories = $this->getCategories();
+
+        return json([
+            'data' => [
+                'daily' => '每日',
+                'trade' => '交易',
+                'review' => '评测',
+                'info' => '资讯',
+                'carpool' => '拼车',
+                'promotion' => '推广',
+                'tech' => '技术',
+            ],
+            'code' => 0,
+            'msg' => 'success'
         ]);
     }
 
@@ -51,7 +72,7 @@ class SearchController
         foreach ($hits as &$hit) {
             $hit['pub_date'] = date('Y-m-d H:i:s', $hit['pub_date']);
         }
-        
+
         return json([
             'hits' => $hits,
             'estimatedTotalHits' => $results->getEstimatedTotalHits(),
@@ -64,7 +85,7 @@ class SearchController
     }
 
     private function getCategories()
-    {        
+    {
         return ['trade', 'daily', 'review', 'info', 'carpool', 'promotion', 'tech', 'expose', 'sha', 'dev'];
     }
-} 
+}
