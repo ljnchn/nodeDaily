@@ -102,7 +102,7 @@ class NodeDailySearch extends Command
                     'category' => $post->category,
                     'creator' => $post->creator,
                     'pub_date' => $post->pub_date,
-                    'tokens' => json_decode($post->tokens ?? '[]')
+                    'tokens' => []
                 ];
                 
                 $count++;
