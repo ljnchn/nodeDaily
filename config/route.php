@@ -28,7 +28,7 @@ Route::fallback(function(){
         return response();
     }
 
-    return json([], 404);
+    return Response('Not Found', 404);
 });
 
 Route::group('/search', function () {
