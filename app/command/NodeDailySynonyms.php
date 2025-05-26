@@ -95,6 +95,13 @@ class NodeDailySynonyms extends Command
             'Sharktech' => ['鲨鱼服务器', 'Sharktech VPS', 'Sharktech主机'],
             'ColoCrossing' => ['CC', 'ColoCrossing VPS', '大水牛'],
             '野草云' => ['YeCaoYun', '野草云VPS', '野草云服务器'],
+            '甲骨文' => ['Oracle', '甲骨文云', 'Oracle Cloud', '龟壳'],
+            '谷歌云' => ['Google Cloud', '谷歌云服务', 'Google Cloud Platform'],
+            '微软云' => ['Microsoft Cloud', '微软云服务', 'Microsoft Cloud Platform'],
+            '阿里云' => ['阿里云服务', '阿里云平台', 'Aliyun'],
+            '腾讯云' => ['腾讯云服务', '腾讯云平台', 'Tencent Cloud'],
+            '华为云' => ['华为云服务', '华为云平台', 'Huawei Cloud'],
+            'aws' => ['Amazon', '亚马逊'],
 
             // 服务器位置
             '美国服务器' => ['美国VPS', '美国云服务器', 'US Server', '美服'],
@@ -138,7 +145,7 @@ class NodeDailySynonyms extends Command
             // 价格相关
             '优惠码' => ['折扣码', 'Coupon', 'Promo Code'],
             '特惠' => ['促销', '折扣', '优惠活动'],
-            '黑五' => ['Black Friday', '黑色星期五', '黑五促销']
+            '黑五' => ['Black Friday', '黑色星期五', '黑五促销'],
         ];
         return $synonyms;
     }
