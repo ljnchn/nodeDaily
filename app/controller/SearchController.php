@@ -68,29 +68,8 @@ class SearchController
         if (!empty($category)) {
             $searchParams['filter'] = "category = '{$category}'";
         }
-        $results = null;
-        // 如果$query包含空格，则添加或条件
-        if (strpos($query, '||') !== false) {
-            $queryArr = explode('||', $query);
-            if (count($queryArr) == 2) {
-                // 使用 multi-search
-                $results = $this->client->multiSearch(
-                    [
-                        (new SearchQuery())
-                            ->setIndexUid('posts')
-                            ->setQuery($queryArr[0]),
-                        (new SearchQuery())
-                            ->setIndexUid('posts')
-                            ->setQuery($queryArr[1]),
-                    ],
-                    (new MultiSearchFederation())
-                );
-            }
-        }
 
-        if ($results == null) {
-            $results = $this->index->search($query, $searchParams);
-        }
+        $results = $this->index->search($query, $searchParams);
 
         $hits = $results->getHits();
         foreach ($hits as &$hit) {
