@@ -31,6 +31,10 @@ Route::fallback(function(){
     return Response('Not Found', 404);
 });
 
+// Telegram Bot Webhook
+Route::post('/telegram/webhook', [app\controller\TelegramBotController::class, 'webhook']);
+Route::get('/telegram/setWebhook', [app\controller\TelegramBotController::class, 'setWebhook']);
+
 Route::group('/search', function () {
     Route::post('/list', [app\controller\SearchController::class, 'search']);
     Route::get('/categoryList', [app\controller\SearchController::class, 'categoryList']);

@@ -38,7 +38,8 @@
     "webman/openai": "^2.0",
     "guzzlehttp/guzzle": "^7.9",
     "meilisearch/meilisearch-php": "^1.14",
-    "http-interop/http-factory-guzzle": "^1.2"
+    "http-interop/http-factory-guzzle": "^1.2",
+    "telegram-bot/api": "^2.5"
   },
   "suggest": {
     "ext-event": "For better performance. "
