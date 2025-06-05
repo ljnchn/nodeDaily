@@ -67,15 +67,11 @@ class TelegramBotController
         switch ($cmd) {
             case '/start':
                 $this->registerUser($chatId, $user);
-                $this->sendMessage($chatId, "欢迎使用 RSS 关键词监控机器人！\n\n使用 /help 查看帮助");
+                $this->sendMessage($chatId, "欢迎使用 NodeDaily 关键词监控机器人！\n\n使用 /help 查看帮助");
                 break;
 
-            case '/add_and':
-                $this->addKeyword($chatId, $params, 'AND');
-                break;
-
-            case '/add_or':
-                $this->addKeyword($chatId, $params, 'OR');
+            case '/add':
+                $this->addKeyword($chatId, $params);
                 break;
 
             case '/list':
@@ -115,7 +111,7 @@ class TelegramBotController
                         'username' => $user['username'] ?? '',
                         'first_name' => $user['first_name'] ?? '',
                         'last_name' => $user['last_name'] ?? '',
-                        'updated_at' => date('Y-m-d H:i:s')
+                        'updated_at' => date('Y-m-d H:i:s'),
                     ]);
             } else {
                 // 创建新用户
@@ -125,7 +121,7 @@ class TelegramBotController
                     'first_name' => $user['first_name'] ?? '',
                     'last_name' => $user['last_name'] ?? '',
                     'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s')
+                    'updated_at' => date('Y-m-d H:i:s'),
                 ]);
             }
         } catch (\Exception $e) {
@@ -169,23 +165,34 @@ class TelegramBotController
         try {
             $userId = $this->getUserId($chatId);
 
-            $subscriptions = Db::table('tg_keyword_subscriptions as s')
-                ->join('keywords as k', 's.keyword_id', '=', 'k.id')
-                ->where('s.user_id', $userId)
-                ->select('s.id', 'k.keyword_text', 's.match_rule', 's.created_at')
+            $subModels = Db::table('tg_keywords_sub')
+                ->where('user_id', $userId)
                 ->get();
 
-            if (empty($subscriptions)) {
-                $this->sendMessage($chatId, "您还没有订阅任何关键词。\n\n使用 /add_and 或 /add_or 来添加关键词订阅。");
+            if (empty($subModels)) {
+                $this->sendMessage($chatId, "您还没有订阅任何关键词。\n\n使用 /add 来添加关键词订阅。");
                 return;
             }
+            $keywordIds = $subModels->pluck('keyword1_id')->merge($subModels->pluck('keyword2_id'))->merge($subModels->pluck('keyword3_id'))->unique();
+            $keywords = Db::table('keywords')
+                ->whereIn('id', $keywordIds)
+                ->get()
+                ->keyBy('id');
 
             $message = "📋 您的关键词订阅列表：\n\n";
-            foreach ($subscriptions as $sub) {
-                $message .= "🔹 ID: {$sub['id']}\n";
-                $message .= "   关键词: {$sub['keyword_text']}\n";
-                $message .= "   规则: {$sub['match_rule']}\n";
-                $message .= "   创建时间: {$sub['created_at']}\n\n";
+            foreach ($subModels as $subModel) {
+                $keyword = [];
+                if ($subModel->keyword1_id) {
+                    $keyword[] = $keywords[$subModel->keyword1_id] ?? '';
+                }
+                if ($subModel->keyword2_id) {
+                    $keyword[] = $keywords[$subModel->keyword2_id] ?? '';
+                }
+                if ($subModel->keyword3_id) {
+                    $keyword[] = $keywords[$subModel->keyword3_id] ?? '';
+                }
+                $message .= "🔹 ID: {$subModel->id}\n";
+                $message .= "   关键词: " . implode(' ', $keyword) . "\n";
             }
 
             $message .= "💡 使用 /delete <ID> 删除订阅";
@@ -238,8 +245,9 @@ class TelegramBotController
         }
     }
 
-    private function addKeyword(int $chatId, string $keywords, string $rule): void
+    private function addKeyword(int $chatId, string $keywords): void
     {
+        $keywords = trim($keywords);
         if (empty($keywords)) {
             $this->sendMessage($chatId, "请提供关键词！");
             return;
@@ -248,24 +256,23 @@ class TelegramBotController
         try {
             $userId = $this->getUserId($chatId);
 
-            // 检查是否存在重复订阅
-            $keywordHash = md5($keywords);
-            $existing = Db::table('user_keyword_subscriptions as s')
-                ->join('keywords as k', 's.keyword_id', '=', 'k.id')
-                ->where('s.user_id', $userId)
-                ->where('k.keyword_hash', $keywordHash)
-                ->where('s.match_rule', $rule)
-                ->first();
-
-            if ($existing) {
-                $this->sendMessage($chatId, "该关键词订阅已存在！");
+            $keywordsArray = explode(' ', $keywords);
+            $keywordsArray = array_filter($keywordsArray, function ($keyword) {
+                return !empty(trim($keyword));
+            });
+            if (empty($keywordsArray)) {
+                $this->sendMessage($chatId, "请提供关键词！");
+                return;
+            }
+            if (count($keywordsArray) > 3) {
+                $this->sendMessage($chatId, "每条规则最多添加 3 个关键词！");
                 return;
             }
 
-            $success = $this->keywordService->subscribeKeyword($userId, $keywords, $rule);
+            $success = $this->keywordService->subscribeKeyword($userId, $keywordsArray);
 
             if ($success) {
-                $this->sendMessage($chatId, "关键词添加成功！\n规则：{$rule}\n关键词：{$keywords}");
+                $this->sendMessage($chatId, "关键词添加成功！\n关键词：{$keywords}");
             } else {
                 $this->sendMessage($chatId, "关键词添加失败，请稍后重试。");
             }
@@ -279,17 +286,14 @@ class TelegramBotController
     {
         $help = "📖 使用帮助\n\n";
         $help .= "/start - 开始使用机器人\n";
-        $help .= "/add_and <关键词> - 添加 AND 规则关键词（多个用逗号分隔）\n";
-        $help .= "/add_or <关键词> - 添加 OR 规则关键词（多个用逗号分隔）\n";
+        $help .= "/add <关键词> - 添加关键词，多个用空格分隔\n";
         $help .= "/list - 查看我的关键词订阅\n";
         $help .= "/delete <ID> - 删除指定关键词订阅\n";
         $help .= "/help - 显示此帮助\n\n";
         $help .= "💡 示例：\n";
-        $help .= "/add_and PHP,Laravel - 同时包含 PHP 和 Laravel\n";
-        $help .= "/add_or Python,Java - 包含 Python 或 Java\n\n";
-        $help .= "📝 说明：\n";
-        $help .= "• AND 规则：内容必须同时包含所有关键词\n";
-        $help .= "• OR 规则：内容包含任意一个关键词即可";
+        $help .= "/add 出 ovh 0.97 - 同时包含 出、ovh 和 0.97\n";
+        $help .= "⚠️ 注意：关键词不能包含空格，多个关键词用空格分隔\n";
+        $help .= "服务器资源有限，每人最多订阅 5 条规则\n";
 
         $this->sendMessage($chatId, $help);
     }

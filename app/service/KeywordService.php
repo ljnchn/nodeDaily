@@ -9,7 +9,7 @@ class KeywordService
     /**
      * 添加关键词（避免重复存储）
      */
-    public function addKeyword(string $keywordText, string $type = 'single'): int
+    public function addKeyword(string $keywordText): int
     {
         $hash = md5($keywordText);
 
@@ -25,7 +25,6 @@ class KeywordService
         return Db::table('keywords')->insertGetId([
             'keyword_hash' => $hash,
             'keyword_text' => $keywordText,
-            'keyword_type' => $type,
             'created_at' => date('Y-m-d H:i:s')
         ]);
     }
@@ -33,14 +32,21 @@ class KeywordService
     /**
      * 用户订阅关键词
      */
-    public function subscribeKeyword(int $userId, string $keywordText, string $matchRule): bool
+    public function subscribeKeyword(int $userId, array $keywordsArray): bool
     {
-        $keywordId = $this->addKeyword($keywordText);
+        foreach ($keywordsArray as $keyword) {
+            $keywordId = $this->addKeyword($keyword);
+            if (!$keywordId) {
+                return false;
+            }
+            $keywordIds[] = $keywordId;
+        }
 
-        return Db::table('user_keyword_subscriptions')->insert([
+        return Db::table('tg_keywords_sub')->insert([
             'user_id' => $userId,
-            'keyword_id' => $keywordId,
-            'match_rule' => $matchRule,
+            'keyword1_id' => $keywordIds[0] ?? 0,
+            'keyword2_id' => $keywordIds[1] ?? 0,
+            'keyword3_id' => $keywordIds[2] ?? 0,
             'created_at' => date('Y-m-d H:i:s')
         ]);
     }
