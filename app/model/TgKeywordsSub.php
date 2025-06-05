@@ -9,7 +9,7 @@ use support\Model;
  * @property integer $id (主键)
  * @property integer $user_id 
  * @property string $keywords_text 
- * @property integer $type 1单个词2多个词
+ * @property integer $keywords_count 
  * @property integer $keyword1_id 
  * @property integer $keyword2_id 
  * @property integer $keyword3_id 
@@ -55,7 +55,7 @@ class TgKeywordsSub extends Model
     protected $fillable = [
         'user_id',
         'keywords_text',
-        'type',
+        'keywords_count',
         'keyword1_id',
         'keyword2_id', 
         'keyword3_id',

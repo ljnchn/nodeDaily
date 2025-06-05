@@ -40,6 +40,7 @@ class KeywordSubscriptionService
 
         // 组装结果
         $result = [];
+        $index = 1;
         foreach ($subscriptions as $sub) {
             $keywordTexts = [];
             if ($sub->keyword1_id && isset($keywords[$sub->keyword1_id])) {
@@ -53,9 +54,11 @@ class KeywordSubscriptionService
             }
 
             $result[] = [
-                'id' => $sub->id,
+                'index' => $index,
+                'id' => $sub->id, // 保留真实ID用于删除操作
                 'keywords' => $keywordTexts
             ];
+            $index++;
         }
 
         return $result;
@@ -64,7 +67,7 @@ class KeywordSubscriptionService
     /**
      * 订阅关键词
      */
-    public function subscribeKeywords(int $userId, array $keywordsArray): bool
+    public function subscribeKeywords(int $userId, array $keywordsArray, string $keywordsText): bool
     {
         if (empty($keywordsArray) || count($keywordsArray) > 3) {
             return false;
@@ -90,6 +93,8 @@ class KeywordSubscriptionService
 
         return TgKeywordsSub::create([
             'user_id' => $userId,
+            'keywords_text' => $keywordsText,
+            'keywords_count' => count($keywordsArray),
             'keyword1_id' => $keywordIds[0] ?? 0,
             'keyword2_id' => $keywordIds[1] ?? 0,
             'keyword3_id' => $keywordIds[2] ?? 0,
@@ -100,19 +105,31 @@ class KeywordSubscriptionService
     }
 
     /**
-     * 删除关键词订阅
+     * 删除关键词订阅（根据用户显示的序号）
      */
-    public function deleteSubscription(int $userId, int $subscriptionId): bool
+    public function deleteSubscription(int $userId, int $index): bool
     {
-        $subscription = TgKeywordsSub::where('id', $subscriptionId)
-            ->where('user_id', $userId)
-            ->first();
+        // 获取用户的所有订阅
+        $subscriptions = TgKeywordsSub::where('user_id', $userId)
+            ->where('is_active', 1)
+            ->orderBy('id')
+            ->get();
 
-        if (!$subscription) {
+        // 检查序号是否有效
+        if ($index < 1 || $index > $subscriptions->count()) {
             return false;
         }
 
-        return $subscription->delete();
+        // 获取对应序号的订阅（序号从1开始，数组索引从0开始）
+        $subscriptionArray = $subscriptions->toArray();
+        $targetSubscription = $subscriptionArray[$index - 1];
+        
+        // 根据ID删除对应的记录
+        $result = TgKeywordsSub::where('id', $targetSubscription['id'])
+            ->where('user_id', $userId)
+            ->delete();
+            
+        return $result > 0;
     }
 
     /**
@@ -126,12 +143,12 @@ class KeywordSubscriptionService
 
         $message = "📋 您的关键词订阅列表：\n\n";
         foreach ($subscriptions as $subscription) {
-            $message .= "🔹 ID: {$subscription['id']}\n";
+            $message .= "🔹 序号: {$subscription['index']}\n";
             $message .= "   关键词: " . implode(' ', $subscription['keywords']) . "\n\n";
         }
 
-        $message .= "💡 使用 /delete <ID> 删除订阅";
+        $message .= "💡 使用 /delete <序号> 删除订阅";
 
         return $message;
     }
-} 
+}

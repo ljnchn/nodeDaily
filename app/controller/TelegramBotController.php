@@ -121,21 +121,21 @@ class TelegramBotController
     /**
      * 处理delete命令
      */
-    private function handleDeleteCommand(int $chatId, string $subscriptionId): void
+    private function handleDeleteCommand(int $chatId, string $subscriptionIndex): void
     {
-        if (empty($subscriptionId) || !is_numeric($subscriptionId)) {
-            $this->telegramService->sendMessage($chatId, "请提供有效的订阅ID！\n\n使用 /list 查看您的订阅列表。");
+        if (empty($subscriptionIndex) || !is_numeric($subscriptionIndex)) {
+            $this->telegramService->sendMessage($chatId, "请提供有效的订阅序号！\n\n使用 /list 查看您的订阅列表。");
             return;
         }
 
         try {
             $userId = $this->userService->getUserIdByChatId($chatId);
-            $success = $this->keywordSubscriptionService->deleteSubscription($userId, (int)$subscriptionId);
+            $success = $this->keywordSubscriptionService->deleteSubscription($userId, (int)$subscriptionIndex);
 
             if ($success) {
                 $this->telegramService->sendMessage($chatId, "关键词订阅删除成功！");
             } else {
-                $this->telegramService->sendMessage($chatId, "未找到指定的订阅ID或该订阅不属于您。");
+                $this->telegramService->sendMessage($chatId, "未找到指定的订阅序号或序号无效。请使用 /list 查看正确的序号。");
             }
         } catch (\Exception $e) {
             $this->telegramService->sendMessage($chatId, "删除关键词订阅失败，请稍后重试。");
@@ -172,7 +172,7 @@ class TelegramBotController
                 return;
             }
 
-            $success = $this->keywordSubscriptionService->subscribeKeywords($userId, $keywordsArray);
+            $success = $this->keywordSubscriptionService->subscribeKeywords($userId, $keywordsArray, $keywords);
 
             if ($success) {
                 $this->telegramService->sendMessage($chatId, "关键词添加成功！\n关键词：{$keywords}");
