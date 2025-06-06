@@ -202,10 +202,10 @@ class NodeDailyKeyWords extends Command
                 continue;
             }
 
-            // 检查用户订阅的关键词是否与匹配的关键词有交集
+            // 检查用户订阅的关键词是否与匹配的关键词
             $intersectedIds = array_intersect($userKeywordIds, $keywordIds);
 
-            if (!empty($intersectedIds)) {
+            if (!empty($intersectedIds) && count($intersectedIds) == count($userKeywordIds)) {
                 // 获取匹配的关键词文本
                 $matchedKeywords = TgKeywords::whereIn('id', $intersectedIds)
                     ->pluck('keyword_text')
