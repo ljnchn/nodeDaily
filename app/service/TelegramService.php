@@ -46,6 +46,17 @@ class TelegramService
         }
     }
 
+    public function sendMarkdownMessage(int $chatId, string $text): bool
+    {
+        try {
+            $this->botApi->sendMessage($chatId, $text, 'Markdown');
+            return true;
+        } catch (Exception $e) {
+            error_log('Error sending markdown message: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     /**
      * 发送帮助信息
      */
@@ -55,7 +66,7 @@ class TelegramService
         $help .= "/start - 开始使用机器人\n";
         $help .= "/add <关键词> - 添加关键词，多个用空格分隔\n";
         $help .= "/list - 查看我的关键词订阅\n";
-        $help .= "/delete <序号> - 删除指定关键词订阅\n";
+        $help .= "/del <序号> - 删除指定关键词订阅\n";
         $help .= "/help - 显示此帮助\n\n";
         $help .= "💡 示例：\n";
         $help .= "添加单个关键词 /add ovh\n";

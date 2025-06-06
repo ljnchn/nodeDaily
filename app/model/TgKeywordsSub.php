@@ -64,5 +64,11 @@ class TgKeywordsSub extends Model
         'updated_at'
     ];
     
-    
+    /**
+     * 关联到用户
+     */
+    public function user()
+    {
+        return $this->belongsTo(TgUsers::class, 'user_id');
+    }
 }

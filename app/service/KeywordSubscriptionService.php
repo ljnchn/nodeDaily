@@ -147,7 +147,7 @@ class KeywordSubscriptionService
             $message .= "   关键词: " . implode(' ', $subscription['keywords']) . "\n\n";
         }
 
-        $message .= "💡 使用 /delete <序号> 删除订阅";
+        $message .= "💡 使用 /del <序号> 删除订阅";
 
         return $message;
     }

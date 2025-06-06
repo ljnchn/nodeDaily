@@ -54,14 +54,14 @@ try {
 - `/add_and <关键词>` - 添加 AND 规则关键词（多个用逗号分隔）
 - `/add_or <关键词>` - 添加 OR 规则关键词（多个用逗号分隔）
 - `/list` - 查看我的关键词订阅
-- `/delete <ID>` - 删除指定关键词订阅
+- `/del <ID>` - 删除指定关键词订阅
 
 ### 示例使用
 ```
 /add_and PHP,Laravel
 /add_or Python,Java,Go
 /list
-/delete 1
+/del 1
 ```
 
 ## 6. 匹配规则说明

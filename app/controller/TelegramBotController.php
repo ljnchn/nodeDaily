@@ -74,7 +74,7 @@ class TelegramBotController
                 $this->handleListCommand($chatId);
                 break;
 
-            case '/delete':
+            case '/del':
                 $this->handleDeleteCommand($chatId, $params);
                 break;
 

@@ -466,7 +466,7 @@ class TelegramBotController
                 $this->listKeywords($chatId);
                 break;
                 
-            case '/delete':
+            case '/del':
                 $this->deleteKeyword($chatId, $params);
                 break;
                 
@@ -499,7 +499,7 @@ class TelegramBotController
         $help .= "/add_and <关键词> - 添加 AND 规则关键词（多个用逗号分隔）\n";
         $help .= "/add_or <关键词> - 添加 OR 规则关键词（多个用逗号分隔）\n";
         $help .= "/list - 查看我的关键词订阅\n";
-        $help .= "/delete <ID> - 删除指定关键词订阅\n";
+        $help .= "/del <ID> - 删除指定关键词订阅\n";
         $help .= "/help - 显示此帮助\n\n";
         $help .= "💡 示例：\n";
         $help .= "/add_and PHP,Laravel - 同时包含 PHP 和 Laravel\n";

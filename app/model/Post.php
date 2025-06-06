@@ -18,6 +18,7 @@ use support\Model;
  * @property string $from_type
  * @property int $is_token
  * @property int $is_search
+ * @property int $is_push
  * @property Json $tokens
  */
 class Post extends Model

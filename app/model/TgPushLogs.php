@@ -45,5 +45,19 @@ class TgPushLogs extends Model
      */
     public $timestamps = false;
     
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'user_id',
+        'chat_id',
+        'post_id',
+        'sub_id',
+        'push_status',
+        'error_message',
+        'created_at'
+    ];
     
 }
