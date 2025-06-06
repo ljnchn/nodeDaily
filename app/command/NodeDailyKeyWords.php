@@ -231,9 +231,12 @@ class NodeDailyKeyWords extends Command
     {
         $message = "🔔 关键词匹配通知：" . implode(', ', $matchedKeywords) . "\n\n";
 
+        // 处理 $post->title 中的 () 和 []
+        $title = str_replace(['(', ')', '[', ']'], ['（', '）', '【', '】'], $post->title);
+
         // 构建帖子链接
         $postUrl = "https://www.nodeseek.com/post-{$post->id}-1";
-        $message .= "📰 [{$post->title}]({$postUrl})\n\n";
+        $message .= "📰 [{$title}]({$postUrl})\n\n";
 
         return $message;
     }
