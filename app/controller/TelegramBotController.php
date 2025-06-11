@@ -7,6 +7,8 @@ use support\Response;
 use app\service\UserService;
 use app\service\TelegramService;
 use app\service\KeywordSubscriptionService;
+use TelegramBot\Api\Types\Inline\InlineKeyboardMarkup;
+use TelegramBot\Api\Types\Inline\InlineKeyboardButton;
 
 class TelegramBotController
 {
@@ -124,7 +126,15 @@ class TelegramBotController
     private function handleDeleteCommand(int $chatId, string $subscriptionIndex): void
     {
         if (empty($subscriptionIndex) || !is_numeric($subscriptionIndex)) {
-            $this->telegramService->sendMessage($chatId, "请提供有效的订阅序号！\n\n使用 /list 查看您的订阅列表。");
+            $keyboard = new InlineKeyboardMarkup([
+                [
+                    [
+                        'text' => '点击删除',
+                        'switch_inline_query_current_chat' => '/del '
+                    ],
+                ]
+            ]);
+            $this->telegramService->sendMessage($chatId, "请提供有效的订阅序号！\n\n使用 /list 查看您的订阅列表。", $keyboard);
             return;
         }
 
@@ -148,11 +158,26 @@ class TelegramBotController
      */
     private function handleAddCommand(int $chatId, string $keywords): void
     {
+        $keyboard = new InlineKeyboardMarkup([
+            [
+                [
+                    'text' => '继续添加',
+                    'switch_inline_query_current_chat' => '/add '
+                ],
+            ]
+        ]);
+
         $keywords = trim($keywords);
         if (empty($keywords)) {
-            $this->telegramService->sendMessage($chatId, "请提供关键词！");
+                $this->telegramService->sendMessage($chatId, "请提供关键词！", $keyboard);
+                return;
+            }
+        // 单字符不允许订阅
+        if (strlen($keywords) <= 1) {
+            $this->telegramService->sendMessage($chatId, "单字符不允许订阅！");
             return;
         }
+
 
         try {
             $userId = $this->userService->getUserIdByChatId($chatId);
@@ -163,7 +188,7 @@ class TelegramBotController
             });
             
             if (empty($keywordsArray)) {
-                $this->telegramService->sendMessage($chatId, "请提供关键词！");
+                $this->telegramService->sendMessage($chatId, "请提供关键词！", $keyboard);
                 return;
             }
             
@@ -175,7 +200,7 @@ class TelegramBotController
             $success = $this->keywordSubscriptionService->subscribeKeywords($userId, $keywordsArray, $keywords);
 
             if ($success) {
-                $this->telegramService->sendMessage($chatId, "关键词添加成功！\n关键词：{$keywords}");
+                $this->telegramService->sendMessage($chatId, "关键词添加成功！\n关键词：{$keywords}", $keyboard);
             } else {
                 $this->telegramService->sendMessage($chatId, "关键词添加失败，请稍后重试。");
             }

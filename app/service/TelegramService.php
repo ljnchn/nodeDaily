@@ -35,10 +35,10 @@ class TelegramService
     /**
      * 发送消息
      */
-    public function sendMessage(int $chatId, string $text): bool
+    public function sendMessage(int $chatId, string $text, $keyboard = null): bool
     {
         try {
-            $this->botApi->sendMessage($chatId, $text);
+            $this->botApi->sendMessage($chatId, $text, null, false, null, $keyboard);
             return true;
         } catch (Exception $e) {
             error_log('Error sending message: ' . $e->getMessage());
