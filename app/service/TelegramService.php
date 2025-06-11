@@ -64,13 +64,13 @@ class TelegramService
     {
         $help = "📖 使用帮助\n\n";
         $help .= "/start - 开始使用机器人\n";
-        $help .= "`/add` <关键词> - 添加关键词，多个用空格分隔\n";
+        $help .= "`/add` 关键词 - 添加关键词，多个用空格分隔\n";
         $help .= "/list - 查看我的关键词订阅\n";
-        $help .= "`/del` <序号> - 删除指定关键词订阅\n";
+        $help .= "`/del ` 序号 - 删除指定关键词订阅\n";
         $help .= "/help - 显示此帮助\n\n";
         $help .= "💡 示例：\n";
-        $help .= "添加单个关键词 `add ovh`\n";
-        $help .= "添加多个关键词 `add 出 ovh 0.97`\n";
+        $help .= "添加单个关键词 `/add ovh`\n";
+        $help .= "添加多个关键词 `/add 出 ovh 0.97`\n";
         $help .= "⚠️ 注意：单个关键词不能包含空格，多个关键词用空格分隔\n";
         $help .= "服务器资源有限，每人最多订阅 5 条规则\n";
 
