@@ -8,7 +8,6 @@ use app\service\UserService;
 use app\service\TelegramService;
 use app\service\KeywordSubscriptionService;
 use TelegramBot\Api\Types\Inline\InlineKeyboardMarkup;
-use TelegramBot\Api\Types\Inline\InlineKeyboardButton;
 
 class TelegramBotController
 {
