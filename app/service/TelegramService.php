@@ -84,4 +84,18 @@ class TelegramService
     {
         $this->sendMessage($chatId, "欢迎使用 NodeDaily 关键词监控机器人！\n\n使用 /help 查看帮助");
     }
+
+    /**
+     * 应答回调查询（移除按钮上的加载状态）
+     */
+    public function answerCallbackQuery(string $callbackQueryId, string $text = null, bool $showAlert = false): bool
+    {
+        try {
+            $this->botApi->answerCallbackQuery($callbackQueryId, $text, $showAlert);
+            return true;
+        } catch (Exception $e) {
+            error_log('Error answering callback query: ' . $e->getMessage());
+            return false;
+        }
+    }
 } 

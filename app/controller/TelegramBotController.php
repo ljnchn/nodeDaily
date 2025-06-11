@@ -38,6 +38,11 @@ class TelegramBotController
                 $this->handleMessage($update['message']);
             }
 
+            // 处理按钮点击回调
+            if (isset($update['callback_query'])) {
+                $this->handleCallbackQuery($update['callback_query']);
+            }
+
             return response('OK');
         } catch (\Exception $e) {
             // 记录错误日志
@@ -137,6 +142,42 @@ class TelegramBotController
     }
 
     /**
+     * 处理按钮点击回调
+     */
+    private function handleCallbackQuery(array $callbackQuery): void
+    {
+        $chatId = $callbackQuery['message']['chat']['id'];
+        $callbackData = $callbackQuery['data'];
+        $callbackQueryId = $callbackQuery['id'];
+        $user = $callbackQuery['from'];
+
+        // 应答回调查询（移除按钮上的加载状态）
+        $this->telegramService->answerCallbackQuery($callbackQueryId);
+
+        // 根据回调数据执行相应的命令
+        switch ($callbackData) {
+            case '/start':
+                $this->handleStartCommand($chatId, $user);
+                break;
+            case '/add':
+                $this->telegramService->sendMessage($chatId, "请输入要添加的关键词：\n\n格式：/add 关键词1 关键词2\n\n例如：/add PHP Laravel");
+                break;
+            case '/list':
+                $this->handleListCommand($chatId);
+                break;
+            case '/del':
+                $this->telegramService->sendMessage($chatId, "请输入要删除的订阅序号：\n\n格式：/del 序号\n\n先使用 /list 查看订阅列表获取序号");
+                break;
+            case '/help':
+                $this->telegramService->sendHelpMessage($chatId);
+                break;
+            default:
+                $this->telegramService->sendMessage($chatId, "未知操作");
+                break;
+        }
+    }
+
+    /**
      * 创建内联键盘按钮
      */
     private function createInlineKeyboard(string $command, $buttonText = null): InlineKeyboardMarkup
@@ -154,7 +195,7 @@ class TelegramBotController
             [
                 [
                     'text' => $text,
-                    'switch_inline_query_current_chat' => $command . ' '
+                    'callback_data' => $command
                 ]
             ]
         ]);
@@ -176,7 +217,7 @@ class TelegramBotController
         foreach ($commands as $command) {
             $buttons[] = [
                 'text' => $buttonTexts[$command] ?? '操作',
-                'switch_inline_query_current_chat' => $command . ' '
+                'callback_data' => $command
             ];
         }
 
