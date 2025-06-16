@@ -250,7 +250,7 @@ class NodeDailyKeyWords extends Command
 
         // 构建帖子链接
         $postUrl = "https://www.nodeseek.com/post-{$post->id}-1";
-        $message .= "📰 [{$title}]({$postUrl})\n\n";
+        $message .= "[{$title}]({$postUrl})\n\n";
 
         return $message;
     }

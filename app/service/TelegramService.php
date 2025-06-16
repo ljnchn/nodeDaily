@@ -35,16 +35,16 @@ class TelegramService
     /**
      * 发送消息
      */
-    public function sendMessage(int $chatId, string $text): array
+    public function sendMessage(int $chatId, string $text, $keyboard = null): array
     {
         try {
-            $this->botApi->sendMessage($chatId, $text);
+            $this->botApi->sendMessage($chatId, $text, null, false, null, $keyboard);
             return ['success' => true, 'error_code' => null, 'error_message' => null];
         } catch (Exception $e) {
             error_log('Error sending message: ' . $e->getMessage());
             return [
-                'success' => false, 
-                'error_code' => $e->getCode(), 
+                'success' => false,
+                'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage()
             ];
         }
@@ -58,8 +58,8 @@ class TelegramService
         } catch (Exception $e) {
             error_log('Error sending markdown message: ' . $e->getMessage());
             return [
-                'success' => false, 
-                'error_code' => $e->getCode(), 
+                'success' => false,
+                'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage()
             ];
         }
@@ -74,7 +74,7 @@ class TelegramService
         if ($errorCode === 403) {
             return true;
         }
-        
+
         // 检查错误消息中的关键词
         $blockedKeywords = [
             'bot was blocked by the user',
@@ -83,14 +83,14 @@ class TelegramService
             'bot can\'t initiate conversation',
             'forbidden'
         ];
-        
+
         $lowerErrorMessage = strtolower($errorMessage);
         foreach ($blockedKeywords as $keyword) {
             if (strpos($lowerErrorMessage, $keyword) !== false) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -101,17 +101,17 @@ class TelegramService
     {
         $help = "📖 使用帮助\n\n";
         $help .= "/start - 开始使用机器人\n";
-        $help .= "/add <关键词> - 添加关键词，多个用空格分隔\n";
+        $help .= "`/add ` 关键词 - 添加关键词，多个用空格分隔\n";
         $help .= "/list - 查看我的关键词订阅\n";
-        $help .= "/del <序号> - 删除指定关键词订阅\n";
+        $help .= "`/del ` 序号 - 删除指定关键词订阅\n";
         $help .= "/help - 显示此帮助\n\n";
         $help .= "💡 示例：\n";
-        $help .= "添加单个关键词 /add ovh\n";
-        $help .= "添加多个关键词 /add 出 ovh 0.97\n";
+        $help .= "添加单个关键词 `/add ovh`\n";
+        $help .= "添加多个关键词 `/add 出 ovh 0.97`\n";
         $help .= "⚠️ 注意：单个关键词不能包含空格，多个关键词用空格分隔\n";
         $help .= "服务器资源有限，每人最多订阅 5 条规则\n";
 
-        $this->sendMessage($chatId, $help);
+        $this->sendMarkdownMessage($chatId, $help);
     }
 
     /**
@@ -121,4 +121,18 @@ class TelegramService
     {
         $this->sendMessage($chatId, "欢迎使用 NodeDaily 关键词监控机器人！\n\n使用 /help 查看帮助");
     }
-} 
+
+    /**
+     * 应答回调查询（移除按钮上的加载状态）
+     */
+    public function answerCallbackQuery(string $callbackQueryId, string $text = null, bool $showAlert = false): bool
+    {
+        try {
+            $this->botApi->answerCallbackQuery($callbackQueryId, $text, $showAlert);
+            return true;
+        } catch (Exception $e) {
+            error_log('Error answering callback query: ' . $e->getMessage());
+            return false;
+        }
+    }
+}

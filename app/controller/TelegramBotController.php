@@ -111,7 +111,7 @@ class TelegramBotController
             $userId = $this->userService->getUserIdByChatId($chatId);
             $subscriptions = $this->keywordSubscriptionService->getUserKeywordSubscriptions($userId);
             $message = $this->keywordSubscriptionService->formatSubscriptionsMessage($subscriptions);
-            $this->telegramService->sendMessage($chatId, $message);
+            $this->telegramService->sendMarkdownMessage($chatId, $message);
         } catch (\Exception $e) {
             $this->telegramService->sendMessage($chatId, "获取关键词列表失败，请稍后重试。");
             error_log('Error listing keywords: ' . $e->getMessage());

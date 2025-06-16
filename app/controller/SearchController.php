@@ -4,8 +4,6 @@ namespace app\controller;
 
 use support\Request;
 use MeiliSearch\Client;
-use MeiliSearch\Contracts\SearchQuery;
-use MeiliSearch\Contracts\MultiSearchFederation;
 
 class SearchController
 {
@@ -18,17 +16,6 @@ class SearchController
         $this->client = new Client($config['host'], $config['key']);
         $this->index = $this->client->index('posts');
     }
-
-    public function index(Request $request)
-    {
-        // 获取所有分类
-        $categories = $this->getCategories();
-
-        return view('search/index', [
-            'categories' => $categories
-        ]);
-    }
-
 
     public function categoryList(Request $request)
     {
@@ -61,12 +48,19 @@ class SearchController
             'limit' => $perPage,
             'offset' => ($page - 1) * $perPage,
             'sort' => ['pub_date:desc'],
-            'attributesToHighlight' => ['title', 'desc']
+            'attributesToHighlight' => ['title', 'desc'],
+            'showRankingScore' => false // 不显示相关度分数
         ];
 
         // 添加分类过滤
         if (!empty($category)) {
             $searchParams['filter'] = "category = '{$category}'";
+        }
+
+        // 如果有搜索关键词，仍然强制按时间排序
+        if (!empty($query)) {
+            // 确保排序优先级高于相关度
+            $searchParams['rankingScoreThreshold'] = null;
         }
 
         $results = $this->index->search($query, $searchParams);
@@ -85,10 +79,5 @@ class SearchController
             'page' => $page,
             'totalPages' => ceil($results->getEstimatedTotalHits() / $perPage)
         ]);
-    }
-
-    private function getCategories()
-    {
-        return ['trade', 'daily', 'review', 'info', 'carpool', 'promotion', 'tech', 'expose', 'sha', 'dev'];
     }
 }
