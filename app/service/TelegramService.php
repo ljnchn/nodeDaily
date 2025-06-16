@@ -35,26 +35,63 @@ class TelegramService
     /**
      * 发送消息
      */
-    public function sendMessage(int $chatId, string $text): bool
+    public function sendMessage(int $chatId, string $text): array
     {
         try {
             $this->botApi->sendMessage($chatId, $text);
-            return true;
+            return ['success' => true, 'error_code' => null, 'error_message' => null];
         } catch (Exception $e) {
             error_log('Error sending message: ' . $e->getMessage());
-            return false;
+            return [
+                'success' => false, 
+                'error_code' => $e->getCode(), 
+                'error_message' => $e->getMessage()
+            ];
         }
     }
 
-    public function sendMarkdownMessage(int $chatId, string $text): bool
+    public function sendMarkdownMessage(int $chatId, string $text): array
     {
         try {
             $this->botApi->sendMessage($chatId, $text, 'Markdown');
-            return true;
+            return ['success' => true, 'error_code' => null, 'error_message' => null];
         } catch (Exception $e) {
             error_log('Error sending markdown message: ' . $e->getMessage());
-            return false;
+            return [
+                'success' => false, 
+                'error_code' => $e->getCode(), 
+                'error_message' => $e->getMessage()
+            ];
         }
+    }
+
+    /**
+     * 检查错误是否表示用户停用了bot
+     */
+    public function isUserBlockedBot(int $errorCode, string $errorMessage): bool
+    {
+        // 常见的用户停用bot的错误情况
+        if ($errorCode === 403) {
+            return true;
+        }
+        
+        // 检查错误消息中的关键词
+        $blockedKeywords = [
+            'bot was blocked by the user',
+            'user is deactivated',
+            'chat not found',
+            'bot can\'t initiate conversation',
+            'forbidden'
+        ];
+        
+        $lowerErrorMessage = strtolower($errorMessage);
+        foreach ($blockedKeywords as $keyword) {
+            if (strpos($lowerErrorMessage, $keyword) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**

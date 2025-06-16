@@ -13,6 +13,7 @@ use app\model\TgKeywordsSub;
 use app\model\TgKeywords;
 use app\model\TgPushLogs;
 use app\service\TelegramService;
+use app\service\UserService;
 
 /**
  * NodeDaily 关键词推送命令
@@ -84,8 +85,10 @@ class NodeDailyKeyWords extends Command
             }
 
             $telegramService = new TelegramService();
+            $userService = new UserService();
             $pushedCount = 0;
             $errorCount = 0;
+            $deactivatedUsers = 0;
 
             foreach ($unpushedPosts as $post) {
                 $output->writeln("处理帖子: {$post->title}");
@@ -124,17 +127,28 @@ class NodeDailyKeyWords extends Command
                     $message = $this->buildPushMessage($post, $matchedKeywords);
 
                     // 发送消息
-                    $success = $telegramService->sendMarkdownMessage($user->chat_id, $message);
+                    $result = $telegramService->sendMarkdownMessage($user->chat_id, $message);
 
                     // 记录推送日志
-                    $this->logPushAttempt($user->id, $user->chat_id, $post->id, $subscription->id, $success);
+                    $this->logPushAttempt($user->id, $user->chat_id, $post->id, $subscription->id, $result);
 
-                    if ($success) {
+                    if ($result['success']) {
                         $pushedCount++;
                         $output->writeln("✓ 推送成功给用户 {$user->chat_id}");
                     } else {
                         $errorCount++;
-                        $output->writeln("✗ 推送失败给用户 {$user->chat_id}");
+                        $output->writeln("✗ 推送失败给用户 {$user->chat_id}: {$result['error_message']}");
+                        
+                        // 检查是否是用户停用bot的错误
+                        if ($telegramService->isUserBlockedBot($result['error_code'] ?? 0, $result['error_message'] ?? '')) {
+                            $output->writeln("⚠️ 检测到用户 {$user->chat_id} 停用了bot，正在停用用户状态...");
+                            if ($userService->deactivateUser($user->chat_id)) {
+                                $deactivatedUsers++;
+                                $output->writeln("✓ 用户 {$user->chat_id} 状态已设为停用");
+                            } else {
+                                $output->writeln("✗ 无法更新用户 {$user->chat_id} 的状态");
+                            }
+                        }
                     }
 
                     // 避免频率限制，稍微延迟
@@ -146,7 +160,7 @@ class NodeDailyKeyWords extends Command
                 $post->save();
             }
 
-            $output->writeln("推送完成！成功: $pushedCount, 失败: $errorCount");
+            $output->writeln("推送完成！成功: $pushedCount, 失败: $errorCount, 停用用户: $deactivatedUsers");
 
         } catch (\Exception $e) {
             $output->writeln("错误: " . $e->getMessage());
@@ -244,7 +258,7 @@ class NodeDailyKeyWords extends Command
     /**
      * 记录推送日志
      */
-    private function logPushAttempt(int $userId, int $chatId, int $postId, int $subId, bool $success): void
+    private function logPushAttempt(int $userId, int $chatId, int $postId, int $subId, array $result): void
     {
         try {
             TgPushLogs::create([
@@ -252,8 +266,8 @@ class NodeDailyKeyWords extends Command
                 'chat_id' => $chatId,
                 'post_id' => $postId,
                 'sub_id' => $subId,
-                'push_status' => $success ? 1 : 0,
-                'error_message' => $success ? null : 'Failed to send message',
+                'push_status' => $result['success'] ? 1 : 0,
+                'error_message' => $result['success'] ? null : $result['error_message'],
                 'created_at' => date('Y-m-d H:i:s')
             ]);
         } catch (\Exception $e) {
