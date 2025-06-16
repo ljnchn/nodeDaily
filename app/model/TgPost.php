@@ -44,5 +44,15 @@ class TgPost extends Model
      */
     public $timestamps = true;
     
-    
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'pid',
+        'title',
+        'desc',
+        'from_type'
+    ];
 }

@@ -35,6 +35,10 @@ Route::fallback(function(){
 Route::post('/telegram/webhook', [app\controller\TelegramBotController::class, 'webhook']);
 Route::get('/telegram/setWebhook', [app\controller\TelegramBotController::class, 'setWebhook']);
 
+// TgPost 数据接收接口
+Route::post('/telegram/receive-data', [app\controller\TelegramBotController::class, 'receiveData']);
+Route::get('/telegram/posts', [app\controller\TelegramBotController::class, 'getPosts']);
+
 Route::group('/search', function () {
     Route::post('/list', [app\controller\SearchController::class, 'search']);
     Route::get('/categoryList', [app\controller\SearchController::class, 'categoryList']);

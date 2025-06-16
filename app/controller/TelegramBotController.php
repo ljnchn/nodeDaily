@@ -7,18 +7,21 @@ use support\Response;
 use app\service\UserService;
 use app\service\TelegramService;
 use app\service\KeywordSubscriptionService;
+use app\service\TgPostService;
 
 class TelegramBotController
 {
     private $userService;
     private $telegramService;
     private $keywordSubscriptionService;
+    private $tgPostService;
 
     public function __construct()
     {
         $this->userService = new UserService();
         $this->telegramService = new TelegramService();
         $this->keywordSubscriptionService = new KeywordSubscriptionService();
+        $this->tgPostService = new TgPostService();
     }
 
     public function setWebhook(Request $request): Response
@@ -42,6 +45,59 @@ class TelegramBotController
             // 记录错误日志
             error_log('Telegram webhook error: ' . $e->getMessage());
             return response('Error', 500);
+        }
+    }
+
+    /**
+     * 接收NodeSeek格式的数据接口
+     * POST /telegram/receive-data
+     */
+    public function receiveData(Request $request): Response
+    {
+        try {
+            $input = json_decode($request->rawBody(), true);
+            
+            // 验证请求数据
+            if (!isset($input['data'])) {
+                return json([
+                    'code' => 400,
+                    'message' => '缺少data参数'
+                ]);
+            }
+
+            $data = $input['data'];
+
+            // 处理单条数据
+            if (is_string($data)) {
+                $result = $this->tgPostService->parseAndSave($data);
+                return json([
+                    'code' => 200,
+                    'message' => "处理完成，成功: {$result['success_count']}, 失败: {$result['error_count']}",
+                    'data' => $result
+                ]);
+            }
+
+            // 处理批量数据
+            if (is_array($data)) {
+                $result = $this->tgPostService->batchParseAndSave($data);
+                return json([
+                    'code' => 200,
+                    'message' => "处理完成，成功: {$result['success_count']}, 失败: {$result['error_count']}",
+                    'data' => $result
+                ]);
+            }
+
+            return json([
+                'code' => 400,
+                'message' => 'data参数格式不正确'
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Receive data error: ' . $e->getMessage());
+            return json([
+                'code' => 500,
+                'message' => '处理失败：' . $e->getMessage()
+            ]);
         }
     }
 
