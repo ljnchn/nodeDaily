@@ -9,6 +9,7 @@ use support\Model;
  * @property integer $id (主键)
  * @property string $keyword_hash MD5哈希，避免重复存储
  * @property string $keyword_text 原始关键词文本
+ * @property string $sub_num 订阅数量
  * @property string $created_at
  */
 class TgKeywords extends Model
@@ -49,6 +50,7 @@ class TgKeywords extends Model
     protected $fillable = [
         'keyword_hash',
         'keyword_text',
+        'sub_num',
         'created_at'
     ];
     

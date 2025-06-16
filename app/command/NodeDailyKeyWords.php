@@ -178,11 +178,11 @@ class NodeDailyKeyWords extends Command
         $titleLower = strtolower($post->title);
         $descLower = strtolower($post->desc ?? '');
 
-        // 获取所有关键词
-        $allKeywords = TgKeywords::all();
+        // 只获取有订阅的关键词（sub_num > 0）
+        $subscribedKeywords = TgKeywords::where('sub_num', '>', 0)->get();
         $matchedKeywordIds = [];
 
-        foreach ($allKeywords as $keyword) {
+        foreach ($subscribedKeywords as $keyword) {
             $keywordLower = strtolower($keyword->keyword_text);
 
             // 主要匹配帖子标题，其次匹配描述
@@ -205,25 +205,34 @@ class NodeDailyKeyWords extends Command
         $matchedSubscriptions = [];
 
         foreach ($activeSubscriptions as $subscription) {
-            // 获取用户订阅的关键词ID
-            $userKeywordIds = array_filter([
-                $subscription->keyword1_id,
-                $subscription->keyword2_id,
-                $subscription->keyword3_id
-            ]);
+            // 获取用户订阅的关键词ID，保持订阅顺序
+            $userKeywordIds = [];
+            if ($subscription->keyword1_id) $userKeywordIds[] = $subscription->keyword1_id;
+            if ($subscription->keyword2_id) $userKeywordIds[] = $subscription->keyword2_id;
+            if ($subscription->keyword3_id) $userKeywordIds[] = $subscription->keyword3_id;
 
             if (empty($userKeywordIds)) {
                 continue;
             }
 
-            // 检查用户订阅的关键词是否与匹配的关键词
-            $intersectedIds = array_intersect($userKeywordIds, $keywordIds);
+            // 检查用户订阅的关键词是否与匹配的关键词ID有交集，保持订阅顺序
+            $intersectedIds = [];
+            foreach ($userKeywordIds as $userKeywordId) {
+                if (in_array($userKeywordId, $keywordIds)) {
+                    $intersectedIds[] = $userKeywordId;
+                }
+            }
 
+            // 只有当用户订阅的所有关键词都匹配时才推送
             if (!empty($intersectedIds) && count($intersectedIds) == count($userKeywordIds)) {
-                // 获取匹配的关键词文本
-                $matchedKeywords = TgKeywords::whereIn('id', $intersectedIds)
-                    ->pluck('keyword_text')
-                    ->toArray();
+                // 获取匹配的关键词文本，保持订阅顺序
+                $matchedKeywords = [];
+                foreach ($intersectedIds as $keywordId) {
+                    $keyword = TgKeywords::find($keywordId);
+                    if ($keyword) {
+                        $matchedKeywords[] = $keyword->keyword_text;
+                    }
+                }
 
                 $matchedSubscriptions[] = [
                     'subscription' => $subscription,

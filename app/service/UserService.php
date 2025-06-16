@@ -6,6 +6,13 @@ use app\model\TgUsers;
 
 class UserService
 {
+    private $keywordSubscriptionService;
+
+    public function __construct()
+    {
+        $this->keywordSubscriptionService = new KeywordSubscriptionService();
+    }
+
     /**
      * 注册或更新用户信息
      */
@@ -21,11 +28,19 @@ class UserService
         ];
 
         if ($user) {
+            // 检查用户之前是否被停用
+            $wasInactive = !$user->is_active;
+            
             // 更新现有用户，如果用户之前被停用，重新激活
-            if (!$user->is_active) {
+            if ($wasInactive) {
                 $userInfo['is_active'] = 1;
             }
             $user->update($userInfo);
+            
+            // 如果用户重新激活，需要处理关键词订阅数量
+            if ($wasInactive) {
+                $this->keywordSubscriptionService->handleUserReactivation($user->id);
+            }
         } else {
             // 创建新用户，默认为活跃状态
             $userInfo['chat_id'] = $chatId;
@@ -67,6 +82,10 @@ class UserService
             return false;
         }
 
+        // 先处理关键词订阅数量更新
+        $this->keywordSubscriptionService->handleUserDeactivation($user->id);
+
+        // 再更新用户状态
         $user->is_active = 0;
         $user->updated_at = date('Y-m-d H:i:s');
         return $user->save();
@@ -84,6 +103,13 @@ class UserService
 
         $user->is_active = 1;
         $user->updated_at = date('Y-m-d H:i:s');
-        return $user->save();
+        $result = $user->save();
+
+        // 激活成功后处理关键词订阅数量
+        if ($result) {
+            $this->keywordSubscriptionService->handleUserReactivation($user->id);
+        }
+
+        return $result;
     }
 } 

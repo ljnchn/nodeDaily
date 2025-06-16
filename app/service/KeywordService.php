@@ -23,6 +23,7 @@ class KeywordService
         $keyword = TgKeywords::create([
             'keyword_hash' => $hash,
             'keyword_text' => $keywordText,
+            'sub_num' => 0,
             'created_at' => date('Y-m-d H:i:s')
         ]);
 
@@ -44,5 +45,49 @@ class KeywordService
     {
         $hash = md5($keywordText);
         return TgKeywords::where('keyword_hash', $hash)->first();
+    }
+
+    /**
+     * 增加关键词订阅数量
+     */
+    public function incrementSubNum(int $keywordId): bool
+    {
+        return TgKeywords::where('id', $keywordId)->increment('sub_num');
+    }
+
+    /**
+     * 减少关键词订阅数量
+     */
+    public function decrementSubNum(int $keywordId): bool
+    {
+        return TgKeywords::where('id', $keywordId)
+            ->where('sub_num', '>', 0)
+            ->decrement('sub_num');
+    }
+
+    /**
+     * 批量增加关键词订阅数量
+     */
+    public function incrementSubNumBatch(array $keywordIds): bool
+    {
+        if (empty($keywordIds)) {
+            return true;
+        }
+        
+        return TgKeywords::whereIn('id', $keywordIds)->increment('sub_num');
+    }
+
+    /**
+     * 批量减少关键词订阅数量
+     */
+    public function decrementSubNumBatch(array $keywordIds): bool
+    {
+        if (empty($keywordIds)) {
+            return true;
+        }
+        
+        return TgKeywords::whereIn('id', $keywordIds)
+            ->where('sub_num', '>', 0)
+            ->decrement('sub_num');
     }
 }

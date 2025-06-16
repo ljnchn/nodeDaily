@@ -91,7 +91,7 @@ class KeywordSubscriptionService
             $keywordIds[] = $keywordId;
         }
 
-        return TgKeywordsSub::create([
+        $created = TgKeywordsSub::create([
             'user_id' => $userId,
             'keywords_text' => $keywordsText,
             'keywords_count' => count($keywordsArray),
@@ -101,7 +101,15 @@ class KeywordSubscriptionService
             'is_active' => 1,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
-        ]) ? true : false;
+        ]);
+
+        if ($created) {
+            // 订阅成功后，增加关键词的订阅数量
+            $this->keywordService->incrementSubNumBatch($keywordIds);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -124,11 +132,23 @@ class KeywordSubscriptionService
         $subscriptionArray = $subscriptions->toArray();
         $targetSubscription = $subscriptionArray[$index - 1];
         
+        // 获取要删除的关键词ID列表
+        $keywordIds = array_filter([
+            $targetSubscription['keyword1_id'],
+            $targetSubscription['keyword2_id'],
+            $targetSubscription['keyword3_id']
+        ]);
+        
         // 根据ID删除对应的记录
         $result = TgKeywordsSub::where('id', $targetSubscription['id'])
             ->where('user_id', $userId)
             ->delete();
             
+        if ($result > 0 && !empty($keywordIds)) {
+            // 删除成功后，减少关键词的订阅数量
+            $this->keywordService->decrementSubNumBatch($keywordIds);
+        }
+        
         return $result > 0;
     }
 
@@ -150,5 +170,83 @@ class KeywordSubscriptionService
         $message .= "💡 使用 `/del ` 序号 删除订阅";
 
         return $message;
+    }
+
+    /**
+     * 处理用户停用时的关键词订阅数量更新
+     * 当用户屏蔽bot时调用此方法
+     */
+    public function handleUserDeactivation(int $userId): bool
+    {
+        // 获取用户的所有活跃订阅
+        $subscriptions = TgKeywordsSub::where('user_id', $userId)
+            ->where('is_active', 1)
+            ->get();
+
+        if ($subscriptions->isEmpty()) {
+            return true;
+        }
+
+        // 收集所有关键词ID
+        $keywordIds = [];
+        foreach ($subscriptions as $subscription) {
+            if ($subscription->keyword1_id) $keywordIds[] = $subscription->keyword1_id;
+            if ($subscription->keyword2_id) $keywordIds[] = $subscription->keyword2_id;
+            if ($subscription->keyword3_id) $keywordIds[] = $subscription->keyword3_id;
+        }
+
+        // 去重
+        $keywordIds = array_unique($keywordIds);
+
+        // 停用用户的所有订阅
+        TgKeywordsSub::where('user_id', $userId)
+            ->where('is_active', 1)
+            ->update(['is_active' => 0, 'updated_at' => date('Y-m-d H:i:s')]);
+
+        // 减少关键词的订阅数量
+        if (!empty($keywordIds)) {
+            $this->keywordService->decrementSubNumBatch($keywordIds);
+        }
+
+        return true;
+    }
+
+    /**
+     * 处理用户重新激活时的关键词订阅数量更新
+     * 当用户重新启用bot时调用此方法
+     */
+    public function handleUserReactivation(int $userId): bool
+    {
+        // 获取用户的所有非活跃订阅
+        $subscriptions = TgKeywordsSub::where('user_id', $userId)
+            ->where('is_active', 0)
+            ->get();
+
+        if ($subscriptions->isEmpty()) {
+            return true;
+        }
+
+        // 收集所有关键词ID
+        $keywordIds = [];
+        foreach ($subscriptions as $subscription) {
+            if ($subscription->keyword1_id) $keywordIds[] = $subscription->keyword1_id;
+            if ($subscription->keyword2_id) $keywordIds[] = $subscription->keyword2_id;
+            if ($subscription->keyword3_id) $keywordIds[] = $subscription->keyword3_id;
+        }
+
+        // 去重
+        $keywordIds = array_unique($keywordIds);
+
+        // 重新激活用户的所有订阅
+        TgKeywordsSub::where('user_id', $userId)
+            ->where('is_active', 0)
+            ->update(['is_active' => 1, 'updated_at' => date('Y-m-d H:i:s')]);
+
+        // 增加关键词的订阅数量
+        if (!empty($keywordIds)) {
+            $this->keywordService->incrementSubNumBatch($keywordIds);
+        }
+
+        return true;
     }
 }
