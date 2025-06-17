@@ -61,7 +61,7 @@ class NodeDailyKeyWords extends Command
         $output->writeln('开始处理未推送的帖子...');
 
         try {
-            // 获取未推送的帖子 (is_push = 0)
+            // 获取未推送的帖子 (handle = 0)
             $unpushedPosts = TgPost::where('handle', 0)
                 ->limit($limit)
                 ->orderBy('id', 'desc')
@@ -130,7 +130,7 @@ class NodeDailyKeyWords extends Command
                     $result = $telegramService->sendMarkdownMessage($user->chat_id, $message);
 
                     // 记录推送日志
-                    $this->logPushAttempt($user->id, $user->chat_id, $post->id, $subscription->id, $result);
+                    $this->logPushAttempt($user->id, $user->chat_id, $post->pid, $subscription->id, $result);
 
                     if ($result['success']) {
                         $pushedCount++;
@@ -157,7 +157,11 @@ class NodeDailyKeyWords extends Command
 
                 // 标记帖子为已推送
                 $post->handle = 1;
-                $post->save();
+                if ($post->save()) {
+                    $output->writeln("✓ 帖子 {$post->pid} 已标记为已推送");
+                } else {
+                    $output->writeln("✗ 无法更新帖子 {$post->pid} 的状态");
+                }
             }
 
             $output->writeln("推送完成！成功: $pushedCount, 失败: $errorCount, 停用用户: $deactivatedUsers");

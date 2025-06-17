@@ -113,7 +113,7 @@ class NodeDailyRsshub extends Command
                 $output->writeln('-------------------');
 
                 // Check if post already exists
-                $exists = TgPost::where('id', $id)->exists();
+                $exists = TgPost::where('pid', $id)->exists();
                 if ($exists) {
                     $output->writeln('Post already exists: ' . $id);
                     continue;
@@ -121,10 +121,9 @@ class NodeDailyRsshub extends Command
                 
                 // Insert into TgPost model
                 $post = new TgPost();
-                $post->id = $id;
                 $post->pid = $id; // 使用相同的ID作为pid
                 $post->title = $title;
-                $post->desc = $cleanDesc;
+                $post->desc = '';
                 $post->from_type = TgPost::FROM_TYPE_RSSHUB; // rsshub类型设为3
                 $post->handle = 0; // 默认未处理
                 $post->save();
