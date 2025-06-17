@@ -185,7 +185,7 @@ class NodeDailyKeyWords extends Command
         $descLower = strtolower($post->desc ?? '');
 
         // 只获取有订阅的关键词（sub_num > 0）
-        $subscribedKeywords = TgKeywords::where('sub_num', '>', 0)->get();
+        $subscribedKeywords = TgKeywords::all();
         $matchedKeywordIds = [];
 
         foreach ($subscribedKeywords as $keyword) {
