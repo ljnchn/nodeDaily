@@ -264,7 +264,7 @@ class NodeDailyKeyWords extends Command
         $title = str_replace(['(', ')', '[', ']'], ['（', '）', '【', '】'], $post->title);
 
         // 构建帖子链接
-        $postUrl = "https://www.nodeseek.com/post-{$post->id}-1";
+        $postUrl = "https://www.nodeseek.com/post-{$post->pid}-1";
         $message .= "[{$title}]({$postUrl})\n\n";
 
         return $message;
