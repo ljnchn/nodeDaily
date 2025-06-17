@@ -7,7 +7,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
-use app\model\Post;
+use app\model\TgPost;
 use app\model\TgUsers;
 use app\model\TgKeywordsSub;
 use app\model\TgKeywords;
@@ -62,7 +62,7 @@ class NodeDailyKeyWords extends Command
 
         try {
             // 获取未推送的帖子 (is_push = 0)
-            $unpushedPosts = Post::where('is_push', 0)
+            $unpushedPosts = TgPost::where('handle', 0)
                 ->limit($limit)
                 ->orderBy('id', 'desc')
                 ->get();
@@ -173,7 +173,7 @@ class NodeDailyKeyWords extends Command
     /**
      * 根据帖子标题匹配关键词，返回匹配的关键词ID列表
      */
-    private function findMatchedKeywordIds(Post $post): array
+    private function findMatchedKeywordIds(TgPost $post): array
     {
         $titleLower = strtolower($post->title);
         $descLower = strtolower($post->desc ?? '');
@@ -250,7 +250,7 @@ class NodeDailyKeyWords extends Command
     /**
      * 构建推送消息
      */
-    private function buildPushMessage(Post $post, array $matchedKeywords = []): string
+    private function buildPushMessage(TgPost $post, array $matchedKeywords = []): string
     {
         $message = "🔔 关键词匹配通知：" . implode(', ', $matchedKeywords) . "\n\n";
 

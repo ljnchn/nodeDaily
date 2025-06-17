@@ -10,6 +10,7 @@ use support\Model;
  * @property integer $pid 
  * @property string $title 
  * @property string $desc 
+ * @property integer $handle 
  * @property integer $from_type 
  * @property string $created_at 
  * @property string $updated_at
@@ -22,7 +23,7 @@ class TgPost extends Model
      * @var string|null
      */
     protected $connection = 'mysql';
-    
+
     /**
      * The table associated with the model.
      *
@@ -43,7 +44,7 @@ class TgPost extends Model
      * @var bool
      */
     public $timestamps = true;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -53,6 +54,7 @@ class TgPost extends Model
         'pid',
         'title',
         'desc',
-        'from_type'
+        'from_type',
+        'handle'
     ];
 }

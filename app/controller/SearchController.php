@@ -49,7 +49,7 @@ class SearchController
             'offset' => ($page - 1) * $perPage,
             'sort' => ['pub_date:desc'],
             'attributesToHighlight' => ['title', 'desc'],
-            'showRankingScore' => false // 不显示相关度分数
+            // 'showRankingScore' => false // 不显示相关度分数
         ];
 
         // 添加分类过滤
