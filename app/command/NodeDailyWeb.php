@@ -135,7 +135,7 @@ class NodeDailyWeb extends Command
                 $post = new TgPost();
                 $post->pid = $id; // 使用相同的ID作为pid
                 $post->title = $title;
-                $post->desc = $desc;
+                $post->desc = '';
                 $post->from_type = TgPost::FROM_TYPE_WEB; // WEB类型
                 $post->handle = 0; // 默认未处理
                 $post->save();

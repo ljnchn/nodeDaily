@@ -30,7 +30,7 @@ use app\service\UserService;
  */
 class NodeDailyKeyWords extends Command
 {
-    protected static $defaultName = 'NodeDaily:keyWords';
+    protected static $defaultName = 'nodeDaily:keyWords';
     protected static $defaultDescription = 'NodeDaily keyWords push to subscribed users';
 
     /**
@@ -98,6 +98,8 @@ class NodeDailyKeyWords extends Command
 
                 if (empty($matchedKeywordIds)) {
                     $output->writeln("帖子未匹配到任何关键词，跳过");
+                    $post->handle = 1;
+                    $post->save();
                     continue;
                 }
 
