@@ -17,6 +17,10 @@ use support\Model;
  */
 class TgPost extends Model
 {
+    const FROM_TYPE_TG = 1;
+    const FROM_TYPE_WEB = 2;
+    const FROM_TYPE_RSSHUB = 3;
+
     /**
      * The connection name for the model.
      *

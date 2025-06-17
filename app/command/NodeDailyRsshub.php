@@ -7,7 +7,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
-use app\model\Post;
+use app\model\TgPost;
 
 class NodeDailyRsshub extends Command
 {
@@ -78,7 +78,7 @@ class NodeDailyRsshub extends Command
             $newItemCount = 0;
 
             // 获取最大id
-            $maxId = Post::max('id');
+            $maxId = TgPost::max('id');
             $output->writeln('Max ID: ' . $maxId);
 
             // Process RSS items
@@ -101,42 +101,32 @@ class NodeDailyRsshub extends Command
                 }
 
                 $title = trim((string) $item->title);
-                $category = 'daily';
                 $pubDate = trim((string) $item->pubDate);
-                $pub_date = strtotime($pubDate);
                 
                 // Remove image tags from description (already obtained above)
                 $cleanDesc = $this->removeImageTags($desc);
                 
-                // Extract creator from description or use default
-                $creator = 'nodeseekc';
-                
                 $output->writeln('Processing item:');
                 $output->writeln('ID: ' . $id);
                 $output->writeln('Title: ' . $title);
-                $output->writeln('Category: ' . $category);
-                $output->writeln('PubDate: ' . $pubDate . ' (' . $pub_date . ')');
-                $output->writeln('Creator: ' . $creator);
+                $output->writeln('PubDate: ' . $pubDate);
                 $output->writeln('-------------------');
 
                 // Check if post already exists
-                $exists = Post::where('id', $id)->exists();
+                $exists = TgPost::where('id', $id)->exists();
                 if ($exists) {
                     $output->writeln('Post already exists: ' . $id);
                     continue;
                 }
                 
-                // Insert into post model
-                $post = new Post();
+                // Insert into TgPost model
+                $post = new TgPost();
                 $post->id = $id;
-                $post->creator = $creator;
+                $post->pid = $id; // 使用相同的ID作为pid
                 $post->title = $title;
-                $post->category = $category;
-                $post->desc = '';
-                $post->pub_date = $pub_date;
-                $post->created_at = time();
-                $post->updated_at = time();
-                $post->from_type = 'rsshub';
+                $post->desc = $cleanDesc;
+                $post->from_type = TgPost::FROM_TYPE_RSSHUB; // rsshub类型设为3
+                $post->handle = 0; // 默认未处理
                 $post->save();
                 
                 $newItemCount++;
