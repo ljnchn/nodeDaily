@@ -17,13 +17,15 @@ class KeywordService
         $existing = TgKeywords::where('keyword_hash', $hash)->first();
 
         if ($existing) {
+            $existing->sub_num += 1;
+            $existing->save();
             return $existing->id;
         }
 
         $keyword = TgKeywords::create([
             'keyword_hash' => $hash,
             'keyword_text' => $keywordText,
-            'sub_num' => 0,
+            'sub_num' => 1,
             'created_at' => date('Y-m-d H:i:s')
         ]);
 
