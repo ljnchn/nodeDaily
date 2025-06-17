@@ -156,7 +156,7 @@ class NodeDailyKeyWords extends Command
                 }
 
                 // 标记帖子为已推送
-                $post->is_push = 1;
+                $post->handle = 1;
                 $post->save();
             }
 
