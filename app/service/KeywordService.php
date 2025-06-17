@@ -50,24 +50,6 @@ class KeywordService
     }
 
     /**
-     * 增加关键词订阅数量
-     */
-    public function incrementSubNum(int $keywordId): bool
-    {
-        return TgKeywords::where('id', $keywordId)->increment('sub_num');
-    }
-
-    /**
-     * 减少关键词订阅数量
-     */
-    public function decrementSubNum(int $keywordId): bool
-    {
-        return TgKeywords::where('id', $keywordId)
-            ->where('sub_num', '>', 0)
-            ->decrement('sub_num');
-    }
-
-    /**
      * 批量增加关键词订阅数量
      */
     public function incrementSubNumBatch(array $keywordIds): bool
