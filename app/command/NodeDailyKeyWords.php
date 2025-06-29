@@ -34,6 +34,22 @@ class NodeDailyKeyWords extends Command
     protected static $defaultDescription = 'NodeDaily keyWords push to subscribed users';
 
     /**
+     * 锁文件句柄
+     */
+    private $lockHandle = null;
+
+    /**
+     * 锁文件路径
+     */
+    private $lockFile;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->lockFile = runtime_path() . '/locks/nodedaily_keywords.lock';
+    }
+
+    /**
      * @return void
      */
     protected function configure()
@@ -48,8 +64,91 @@ class NodeDailyKeyWords extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $limit = (int) $input->getOption('limit');
-        return $this->pushToSubscribedUsers($output, $limit);
+        // 尝试获取执行锁
+        if (!$this->acquireLock($output)) {
+            $output->writeln('<error>命令已在运行中，无法同时执行多个实例</error>');
+            return self::FAILURE;
+        }
+
+        try {
+            $limit = (int) $input->getOption('limit');
+            $result = $this->pushToSubscribedUsers($output, $limit);
+        } finally {
+            // 确保释放锁
+            $this->releaseLock($output);
+        }
+
+        return $result;
+    }
+
+    /**
+     * 获取执行锁
+     */
+    private function acquireLock(OutputInterface $output): bool
+    {
+        try {
+            // 确保锁文件目录存在
+            $lockDir = dirname($this->lockFile);
+            if (!is_dir($lockDir)) {
+                if (!mkdir($lockDir, 0755, true)) {
+                    $output->writeln('<error>无法创建锁文件目录: ' . $lockDir . '</error>');
+                    return false;
+                }
+            }
+
+            // 打开锁文件
+            $this->lockHandle = fopen($this->lockFile, 'w');
+            if ($this->lockHandle === false) {
+                $output->writeln('<error>无法创建锁文件: ' . $this->lockFile . '</error>');
+                return false;
+            }
+
+            // 尝试获取独占锁，非阻塞模式
+            if (!flock($this->lockHandle, LOCK_EX | LOCK_NB)) {
+                fclose($this->lockHandle);
+                $this->lockHandle = null;
+                return false;
+            }
+
+            // 写入当前进程信息
+            fwrite($this->lockHandle, "PID: " . getmypid() . "\n");
+            fwrite($this->lockHandle, "Started: " . date('Y-m-d H:i:s') . "\n");
+            fflush($this->lockHandle);
+
+            $output->writeln('<info>✓ 获取执行锁成功</info>');
+            return true;
+
+        } catch (\Exception $e) {
+            $output->writeln('<error>获取执行锁时发生错误: ' . $e->getMessage() . '</error>');
+            if ($this->lockHandle) {
+                fclose($this->lockHandle);
+                $this->lockHandle = null;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * 释放执行锁
+     */
+    private function releaseLock(OutputInterface $output): void
+    {
+        if ($this->lockHandle) {
+            try {
+                flock($this->lockHandle, LOCK_UN);
+                fclose($this->lockHandle);
+                $this->lockHandle = null;
+                
+                // 删除锁文件
+                if (file_exists($this->lockFile)) {
+                    unlink($this->lockFile);
+                }
+                
+                $output->writeln('<info>✓ 执行锁已释放</info>');
+            } catch (\Exception $e) {
+                $output->writeln('<error>释放执行锁时发生错误: ' . $e->getMessage() . '</error>');
+            }
+        }
     }
 
 
