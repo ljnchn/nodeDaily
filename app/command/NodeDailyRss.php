@@ -29,7 +29,7 @@ class NodeDailyRss extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $url = 'https://rss.nodeseek.com/';
+        $url = 'https://nodeseek-rss-proxy.ljn.workers.dev/';
 
         // Initialize cURL session
         $ch = curl_init();
