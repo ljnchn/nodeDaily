@@ -25,5 +25,18 @@ return  [
                 'heartbeat_interval' => 50,
             ],
         ],
+        'sqlite' => [
+            'driver'   => 'sqlite',
+            'url' => '',
+            'database' => 'database/lite.db',
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+            'busy_timeout' => null,
+            'journal_mode' => 'WAL',
+            'synchronous' => 'OFF',
+            'cache_size' => -20000,
+            'temp_store ' => 'MEMORY',
+            'mmap_size ' => '2147483648',
+        ],
     ],
 ];
